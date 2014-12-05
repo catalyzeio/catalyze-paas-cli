@@ -1,0 +1,42 @@
+from __future__ import absolute_import
+
+import json, itertools, click
+
+from catalyze import cli, client, project
+from catalyze.helpers import services, environment_variables
+
+@cli.group("vars", short_help = "Check/set/unset environment variables.")
+def vars_group():
+    """Interacts with environment variables set for the associated service."""
+
+@vars_group.command()
+def list():
+    """List all set variables."""
+    settings = project.read_settings()
+    session = client.acquire_session(settings)
+    variables = environment_variables.list(session, settings["environmentId"], settings["serviceId"])
+    for value, key in sorted(variables.items()):
+        print("%s = %s" % (value, key))
+
+@vars_group.command(short_help = "Set or update a variable.")
+@click.argument("variables", nargs = -1)
+def set(variables):
+    """Set or update one or more variables. Expects variables in the form <key>=<value>. Multiple variables can be set at once. Variable changes will not take effect in the application until it is redeployed."""
+    settings = project.read_settings()
+    session = client.acquire_session(settings)
+    body = {}
+    for var in variables:
+        pieces = var.split("=", 1)
+        if len(pieces) != 2:
+            print("Expected argument form: <key>=<value>")
+        else:
+            body[pieces[0]] = pieces[1]
+    environment_variables.set(session, settings["environmentId"], settings["serviceId"], body)
+
+@vars_group.command()
+@click.argument("variable")
+def unset(variable):
+    """Unset (delete) a variable."""
+    settings = project.read_settings()
+    session = client.acquire_session(settings)
+    environment_variables.unset(session, settings["environmentId"], settings["serviceId"], variable)
