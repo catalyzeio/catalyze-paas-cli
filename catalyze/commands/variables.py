@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import json, itertools, click
 
-from catalyze import cli, client, project
+from catalyze import cli, client, project, config
 from catalyze.helpers import services, environment_variables
 
 @cli.group("vars", short_help = "Check/set/unset environment variables.")
@@ -14,7 +14,8 @@ def list():
     """List all set variables."""
     settings = project.read_settings()
     session = client.acquire_session(settings)
-    variables = environment_variables.list(session, settings["environmentId"], settings["serviceId"])
+    service = session.get("%s/v1/environments/%s/services/%s" % (config.paas_host, settings["environmentId"], settings["serviceId"]), verify = True)
+    variables = service["data"]["environmentVariables"]
     for value, key in sorted(variables.items()):
         print("%s = %s" % (value, key))
 
