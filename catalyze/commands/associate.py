@@ -30,7 +30,7 @@ def associate(env_label, remote):
     print("No environment with label \"%s\" found." % (env_label,))
 
 @cli.command()
-def disassociate(args, flags):
+def disassociate():
     """Remove association with environment."""
     project.clear_settings()
     print("Association cleared.")
