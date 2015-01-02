@@ -10,7 +10,7 @@ def list(session, env_id):
 def initiate_rake(session, env_id, svc_id, task_name):
     route = "%s/v1/environments/%s/services/%s/rake/%s" % \
             (config.paas_host, env_id, svc_id, urllib.quote(task_name, "").replace(" ", "%20"),)
-    return session.post(route, body, verify = True)
+    return session.post(route, {}, verify = True)
 
 def redeploy(session, env_id, svc_id):
     route = "%s/v1/environments/%s/services/%s/redeploy" % (config.paas_host, env_id, svc_id)
