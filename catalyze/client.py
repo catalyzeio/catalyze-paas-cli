@@ -36,7 +36,7 @@ class Session:
         resp = self.session.get(url, headers = self._build_headers())
         if verify:
             if is_ok(resp):
-                return None if resp.status_code == 204 else resp.json()
+                return None if not resp.text else resp.json()
             else:
                 raise ClientError(resp)
         else:
@@ -46,7 +46,7 @@ class Session:
         resp = self.session.post(url, headers = self._build_headers(), data = json.dumps(body))
         if verify:
             if is_ok(resp):
-                return None if resp.status_code == 204 else resp.json()
+                return None if not resp.text else resp.json()
             else:
                 raise ClientError(resp)
         else:
@@ -58,7 +58,7 @@ class Session:
         resp = self.session.post(url, headers = headers, files = form)
         if verify:
             if is_ok(resp):
-                return None if resp.status_code == 204 else resp.json()
+                return None if not resp.text else resp.json()
             else:
                 raise ClientError(resp)
         else:
@@ -68,7 +68,7 @@ class Session:
         resp = self.session.put(url, headers = self._build_headers(), data = json.dumps(body))
         if verify:
             if is_ok(resp):
-                return None if resp.status_code == 204 else resp.json()
+                return None if not resp.text else resp.json()
             else:
                 raise ClientError(resp)
         else:
@@ -78,7 +78,7 @@ class Session:
         resp = self.session.delete(url, headers = self._build_headers())
         if verify:
             if is_ok(resp):
-                return None if resp.status_code == 204 else resp.json()
+                return None if not resp.text else resp.json()
             else:
                 raise ClientError(resp)
         else:
