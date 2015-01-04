@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from catalyze import cli, client, config, project
+from catalyze.helpers import services
 
 @cli.command()
 def redeploy():
