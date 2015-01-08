@@ -7,6 +7,8 @@ CLI tool for interacting with environments hosted on [Catalyze](https://catalyze
 
 Either of these methods requires python 2.7, [pip](https://pip.pypa.io/en/latest/installing.html), and setuptools (`pip install setuptools`).
 
+(note for OS X users: versions before 2.7.8 can result in SSL EOF errors. If you run into those, try upgrading to 2.7.8.)
+
 To verify installation: `catalyze version`
 
 ### From PyPI
