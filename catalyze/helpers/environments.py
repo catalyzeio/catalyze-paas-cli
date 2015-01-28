@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from catalyze import config
 
 def list(session):
-    route = "%s/v1/environments" % (config.paas_host,)
+    route = "%s/v1/environments?pageSize=1000" % (config.paas_host,)
     return session.get(route, verify = True)
 
 def retrieve(session, env_id, source = "spec"):

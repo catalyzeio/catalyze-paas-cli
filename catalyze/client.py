@@ -15,13 +15,14 @@ def is_ok(resp):
     return resp.status_code >= 200 and resp.status_code < 300
 
 class Session:
-    def __init__(self, token = None, username = None, password = None):
+    def __init__(self, token = None, user_id = None, username = None, password = None):
         self.session = requests.Session()
         self.session.verify = "skip_cert_validation" not in config.behavior
         if token is None:
             self.sign_in(username, password)
         else:
             self.token = token
+            self.user_id = user_id
 
     def _build_headers(self):
         return {
@@ -96,6 +97,7 @@ class Session:
         if is_ok(resp):
             j = resp.json()
             self.token = j["sessionToken"]
+            self.user_id = j["usersId"]
         else:
             raise AuthError(resp.json())
 
@@ -106,8 +108,8 @@ class Session:
         self.session.close()
 
 def acquire_session(settings = None):
-    if settings is not None and "token" in settings:
-        session = Session(token = settings["token"])
+    if settings is not None and "token" in settings and "user_id" in settings:
+        session = Session(token = settings["token"], user_id = settings["user_id"])
         resp = session.get(config.baas_host + "/v2/auth/verify")
         if resp.status_code == 200:
             return session
@@ -122,5 +124,6 @@ def acquire_session(settings = None):
     session = Session(username = username, password = password)
     if settings is not None:
         settings["token"] = session.token
+        settings["user_id"] = session.user_id
         project.save_settings(settings)
     return session
