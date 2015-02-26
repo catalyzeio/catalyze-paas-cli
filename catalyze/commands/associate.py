@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 import click
-from catalyze import cli, client, git, project
+from catalyze import cli, client, git, project, output
 from catalyze.helpers import environments, services
 
 @cli.command(short_help = "Associates a local repository with an environment.")
@@ -23,14 +23,12 @@ def associate(env_label, remote):
                     git.remote_add(remote, svc["data"]["source"])
                     settings["serviceId"] = svc["serviceId"]
                     project.save_settings(settings)
-                    print("\"%s\" remote added." % (remote,))
-                    return
-            print("No code service found for \"%s\" environment (%s)" % (env_label, env["environmentId"]))
-            return
-    print("No environment with label \"%s\" found." % (env_label,))
+                    output.write("\"%s\" remote added." % (remote,))
+            output.error("No code service found for \"%s\" environment (%s)" % (env_label, env["environmentId"]))
+    output.error("No environment with label \"%s\" found." % (env_label,))
 
 @cli.command()
 def disassociate():
     """Remove association with environment."""
     project.clear_settings()
-    print("Association cleared.")
+    output.write("Association cleared.")

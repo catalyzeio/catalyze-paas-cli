@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
-from catalyze import config, project
-import requests, json, getpass, os
+from catalyze import config, project, output
+import requests, json, getpass, os, sys
 
 class AuthError(Exception):
     def __init__(self, message):
@@ -10,6 +10,27 @@ class AuthError(Exception):
 class ClientError(Exception):
     def __init__(self, resp):
         Exception.__init__(self, "%d: %s" % (resp.status_code, resp.text))
+
+previous_hook = sys.excepthook
+
+def excepthook(exc_type, value, traceback):
+    if exc_type in [AuthError, ClientError]:
+        if type(value.message) is dict and "errors" in value.message:
+            errors = value.message["errors"]
+            if len(errors) == 0:
+                output.error("Unknown error")
+            else:
+                for error in errors:
+                    if "title" in error:
+                        output.error("%(title)s (%(description)s)" % error)
+                    else:
+                        output.error("%(message)s (%(code)d)" % error)
+        else:
+            output.error(value)
+    else:
+        previous_hook(exc_type, value, traceback)
+
+sys.excepthook = excepthook
 
 def is_ok(resp):
     return resp.status_code >= 200 and resp.status_code < 300
@@ -114,7 +135,7 @@ def acquire_session(settings = None):
         if resp.status_code == 200:
             return session
         elif resp.status_code == 401:
-            print("Session has timed out. Please re-enter credentials.")
+            output.write("Session has timed out. Please re-enter credentials.")
     username = os.getenv("CATALYZE_USERNAME")
     if username is None:
         username = raw_input("Username: ") if "username" not in config.behavior else config.behavior["username"]

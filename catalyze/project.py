@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import sys, os, json
+from catalyze import output
 
 FILE_PATH = "./.git/catalyze-config.json"
 
@@ -11,12 +12,10 @@ def read_settings(required = True):
                 return json.load(file)
         else:
             if required:
-                print("No Catalyze environment associated with this local repo. Run \"catalyze associate\" first.")
-                sys.exit(-1)
+                output.error("No Catalyze environment associated with this local repo. Run \"catalyze associate\" first.")
             return None
     elif required:
-        print("No git repo found in the current directory.")
-        sys.exit(-1)
+        output.error("No git repo found in the current directory.")
     else:
         return None
 

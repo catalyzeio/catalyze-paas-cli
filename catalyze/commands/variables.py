@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import json, itertools, click
 
-from catalyze import cli, client, project, config
+from catalyze import cli, client, project, config, output
 from catalyze.helpers import services, environment_variables
 
 @cli.group("vars", short_help = "Check/set/unset environment variables.")
@@ -17,7 +17,7 @@ def list():
     service = session.get("%s/v1/environments/%s/services/%s" % (config.paas_host, settings["environmentId"], settings["serviceId"]), verify = True)
     variables = service["data"]["environmentVariables"]
     for value, key in sorted(variables.items()):
-        print("%s = %s" % (value, key))
+        output.write("%s = %s" % (value, key))
 
 @vars_group.command(short_help = "Set or update a variable.")
 @click.argument("variables", nargs = -1)
@@ -29,7 +29,7 @@ def set(variables):
     for var in variables:
         pieces = var.split("=", 1)
         if len(pieces) != 2:
-            print("Expected argument form: <key>=<value>")
+            output.error("Expected argument form: <key>=<value>")
         else:
             body[pieces[0]] = pieces[1]
     environment_variables.set(session, settings["environmentId"], settings["serviceId"], body)
