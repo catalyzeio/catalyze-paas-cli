@@ -136,10 +136,10 @@ def acquire_session(settings = None):
             return session
         elif resp.status_code == 401:
             output.write("Session has timed out. Please re-enter credentials.")
-    username = os.getenv("CATALYZE_USERNAME")
+    username = os.getenv("CATALYZE_USERNAME") or config.username
     if username is None:
         username = raw_input("Username: ") if "username" not in config.behavior else config.behavior["username"]
-    password = os.getenv("CATALYZE_PASSWORD")
+    password = os.getenv("CATALYZE_PASSWORD") or config.password
     if password is None:
         password = getpass.getpass("Password: ")
     session = Session(username = username, password = password)
