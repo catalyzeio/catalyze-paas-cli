@@ -12,6 +12,7 @@ def init_cli():
     @click.option("--username", help = "Catalyze Username")
     @click.option("--password", help = "Catalyze Password")
     @click.option("--skip-validation", is_flag = True, help = "Skip certificate validation")
+    @click.version_option(version = config.version)
     def inner_cli(baas_host, paas_host, username, password, skip_validation):
         if baas_host is not None:
             config.baas_host = baas_host
@@ -27,11 +28,6 @@ def init_cli():
 
     global cli
     cli = inner_cli
-
-    @cli.command()
-    def version():
-        """Outputs the current CLI version."""
-        print(config.version)
 
     from catalyze.commands import \
         associate, dashboard, environments, rake, redeploy, status, variables
