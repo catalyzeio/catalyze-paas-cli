@@ -14,6 +14,7 @@ def associate(env_label, remote):
         if env["data"]["name"] == env_label:
             settings = {
                     "token": session.token,
+                    "user_id": session.user_id,
                     "environmentId": env["environmentId"]
                 }
             for svc in services.list(session, env["environmentId"]):
@@ -24,6 +25,7 @@ def associate(env_label, remote):
                     settings["serviceId"] = svc["serviceId"]
                     project.save_settings(settings)
                     output.write("\"%s\" remote added." % (remote,))
+                    return
             output.error("No code service found for \"%s\" environment (%s)" % (env_label, env["environmentId"]))
     output.error("No environment with label \"%s\" found." % (env_label,))
 
