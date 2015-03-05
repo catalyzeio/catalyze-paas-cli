@@ -6,5 +6,5 @@ from catalyze import cli, config
 
 @cli.command("dashboard")
 def dashboard():
-    """Open the Catalyze dashboard in your browser."""
+    """Open the Catalyze dashboard in your browser"""
     webbrowser.open(config.dashboard_url)

@@ -9,22 +9,33 @@ class AuthError(Exception):
 
 class ClientError(Exception):
     def __init__(self, resp):
-        Exception.__init__(self, "%d: %s" % (resp.status_code, resp.text))
+        message = resp
+        if type(resp) is requests.Response:
+            try:
+                message = resp.json()
+            except ValueError:
+                message = {"errors": [{"message": resp.text, "code": -1}]}
+        Exception.__init__(self, message)
 
 previous_hook = sys.excepthook
 
 def excepthook(exc_type, value, traceback):
     if exc_type in [AuthError, ClientError]:
-        if type(value.message) is dict and "errors" in value.message:
-            errors = value.message["errors"]
-            if len(errors) == 0:
-                output.error("Unknown error")
+        if type(value.message) is dict:
+            if "errors" in value.message:
+                errors = value.message["errors"]
+                if len(errors) == 0:
+                    output.error("Unknown error")
+                else:
+                    for error in errors:
+                        if "title" in error:
+                            output.error("%(title)s (%(description)s)" % error)
+                        else:
+                            output.error("%(message)s (%(code)d)" % error)
+            elif "title" in value.message and "description" in value.message:
+                output.error("%(title)s (%(description)s)" % value.message)
             else:
-                for error in errors:
-                    if "title" in error:
-                        output.error("%(title)s (%(description)s)" % error)
-                    else:
-                        output.error("%(message)s (%(code)d)" % error)
+                output.error(value)
         else:
             output.error(value)
     else:

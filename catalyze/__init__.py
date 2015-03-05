@@ -4,7 +4,7 @@ cli = None
 
 def init_cli():
     import click
-    from . import config
+    from . import config, output
 
     @click.group("catalyze")
     @click.option("--baas-host", help = "Alternate BaaS API URL")
@@ -16,21 +16,21 @@ def init_cli():
     def inner_cli(baas_host, paas_host, username, password, skip_validation):
         if baas_host is not None:
             config.baas_host = baas_host
-            print("Overriding BaaS URL: " + config.baas_host)
+            output.write("Overriding BaaS URL: " + config.baas_host)
         if paas_host is not None:
             config.paas_host = paas_host
-            print("Overriding PaaS URL: " + config.paas_host)
+            output.write("Overriding PaaS URL: " + config.paas_host)
         config.username = username
         config.password = password
         if skip_validation:
             config.behavior["skip_cert_validation"] = False
-            print("Skipping cert validation, I hope this was intentional")
+            output.write("Skipping cert validation, I hope this was intentional")
 
     global cli
     cli = inner_cli
 
     from catalyze.commands import \
-        associate, dashboard, environments, rake, redeploy, status, variables
+        associate, backup, dashboard, db, environments, rake, redeploy, status, users, variables, worker
 
 def run():
     import catalyze.__main__

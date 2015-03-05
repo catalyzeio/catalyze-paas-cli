@@ -3,9 +3,9 @@ from __future__ import absolute_import
 from catalyze import cli, client, config, project, output
 from catalyze.helpers import environments
 
-@cli.command("environments")
+@cli.command("environments", short_help = "List your environments")
 def list_environments():
-    """Lists all environments you own."""
+    """Lists all environments to which you have access."""
     settings = project.read_settings(required = False)
     session = client.acquire_session(settings)
     envs = environments.list(session)
