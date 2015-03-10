@@ -42,8 +42,8 @@ def associate(env_label, service_label, remote):
             settings["serviceId"] = selected_service["id"]
             project.save_settings(settings)
             output.write("\"%s\" remote added." % (remote,))
-        else:
-            output.error("No environment with label \"%s\" found." % (env_label,))
+            return
+    output.error("No environment with label \"%s\" found." % (env_label,))
 
 @cli.command()
 def disassociate():
