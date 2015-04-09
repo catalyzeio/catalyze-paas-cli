@@ -26,7 +26,7 @@ def cmd_import(database_label, filepath, mongo_collection, mongo_database, wipe_
 
 The import is accomplished by encrypting the file and uploading it to Catalyze. An automated service processes the file according to the passed parameters. The command offers the option to either wait until the processing is finished (and be notified of the end result), or to just kick it off.
 
-The type of file depends on the database. For postgres and mysql, this should be a single SQL script with the extension "sql". For mongo, this should be a tar'd, gzipped archive of the dump that you wish to import, with the extension "tar.gz". For further help on creating backups,
+The type of file depends on the database. For postgres and mysql, this should be a single SQL script with the extension "sql". For mongo, this should be a tar'd, gzipped archive of the dump that you wish to import, with the extension "tar.gz".
 
 If there is an unexpected error, please contact Catalyze support (support@catalyze.io).
 """
@@ -70,7 +70,7 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
 
             task_id = resp["id"]
             print("Processing import... (id = %s)" % (task_id,))
-            status = tasks.poll_status(session, task_id)
+            status = tasks.poll_status(session, settings["environmentId"], task_id)
             print("\nImport complete (end status = '%s')" % (status,))
     finally:
         shutil.rmtree(dir)

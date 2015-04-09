@@ -46,7 +46,7 @@ def create(service_label, skip_poll):
     print("Backup started (task ID = %s)" % (task_id,))
     if not skip_poll:
         output.write("Polling until backup finishes.")
-        status = tasks.poll_status(session, task_id)
+        status = tasks.poll_status(session, settings["environmentId"], task_id)
         output.write("\nEnded in status '%s'" % (status,))
 
 @backup.command(short_help = "Restore from a backup")
@@ -61,5 +61,5 @@ def restore(service_label, backup_id, skip_poll):
     output.write("Restoring (task = %s)" % (task_id,))
     if not skip_poll:
         output.write("Polling until restore is complete.")
-        status = tasks.poll_status(session, task_id)
+        status = tasks.poll_status(session, settings["environmentId"], task_id)
         output.write("\nEnded in status '%s'" % (status,))
