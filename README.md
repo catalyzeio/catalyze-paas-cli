@@ -29,3 +29,5 @@ pip install catalyze
 ## Issues, Support, and Help
 
 For bugs with the CLI itself, please open github issues. For platform questions and problems, please [email Catalyze support](mailto:support@catalyze.io) (support@catalyze.io).
+
+The same text available from `--help` is also available online at [https://resources.catalyze.io/paas/cli/](https://resources.catalyze.io/paas/cli/).
