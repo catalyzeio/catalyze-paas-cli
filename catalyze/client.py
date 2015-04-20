@@ -1,7 +1,11 @@
 from __future__ import absolute_import
 
 from catalyze import config, project, output
-import requests, json, getpass, os, sys
+import requests, json, getpass, os, sys, ssl
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.poolmanager import PoolManager
+import requests.packages.urllib3.contrib.pyopenssl
+requests.packages.urllib3.contrib.pyopenssl.inject_into_urllib3()
 
 class AuthError(Exception):
     def __init__(self, message):
@@ -46,9 +50,17 @@ sys.excepthook = excepthook
 def is_ok(resp):
     return resp.status_code >= 200 and resp.status_code < 300
 
+class ForcedTLSAdapter(HTTPAdapter):
+    def init_poolmanager(self, connections, maxsize, block = False):
+        self.poolmanager = PoolManager(num_pools = connections,
+            maxsize = maxsize,
+            block = block,
+            ssl_version = ssl.PROTOCOL_TLSv1)
+
 class Session:
     def __init__(self, token = None, user_id = None, username = None, password = None):
         self.session = requests.Session()
+        self.session.mount("https://", ForcedTLSAdapter())
         self.session.verify = "skip_cert_validation" not in config.behavior
         if token is None:
             self.sign_in(username, password)
