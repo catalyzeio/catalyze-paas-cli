@@ -7,9 +7,11 @@ CLI tool for interacting with environments hosted on [Catalyze](https://catalyze
 
 Either of these methods requires python 2.7, [pip](https://pip.pypa.io/en/latest/installing.html), and setuptools (`pip install setuptools`).
 
-(note for OS X users: versions before 2.7.8 can result in SSL EOF errors. If you run into those, try upgrading to 2.7.8.)
-
 To verify installation: `catalyze --version`
+
+### libffi
+
+You may get an error about a missing `libffi.h` - if this is the case, use your OS's package manager to install libffi (for OS X, using [homebrew](http://brew.sh/) - `brew install libffi`).
 
 ### From PyPI
 
@@ -20,7 +22,7 @@ pip install catalyze
 ### From Source
 
 1. Clone this repo
-2. `python setup.py install`
+2. `python setup.py install` (see libffi note above)
 
 ## Usage
 
