@@ -58,3 +58,31 @@ def initiate_worker(session, env_id, svc_id, target):
     return session.post(route, {
         "target": target
     }, verify = True)
+
+
+def request_console(session, env_id, svc_id, command = None):
+    route = "%s/v1/environments/%s/services/%s/console" % (config.paas_host, env_id, svc_id)
+    body = {}
+    if command is not None:
+        body["command"] = command
+    return session.post(route, body, verify = True)
+
+def console_job_status(session, env_id, svc_id, task_id):
+    route = "%s/v1/environments/%s/services/%s/console/status/%s" % (config.paas_host, env_id, svc_id, task_id)
+    return session.get(route, verify = True)
+
+def poll_console_job(session, env_id, svc_id, task_id):
+    while True:
+        resp = console_job_status(session, env_id, svc_id, task_id)
+        if resp["jobId"] is not None:
+            return resp["jobId"]
+        time.sleep(2)
+        output.write(".", sameline = True)
+
+def get_console_tokens(session, env_id, svc_id, job_id):
+    route = "%s/v1/environments/%s/services/%s/console/token/%s" % (config.paas_host, env_id, svc_id, job_id)
+    return session.get(route, verify = True)
+
+def destroy_console(session, env_id, svc_id, job_id):
+    route = "%s/v1/environments/%s/services/%s/console/%s" % (config.paas_host, env_id, svc_id, job_id)
+    return session.delete(route, verify = True)

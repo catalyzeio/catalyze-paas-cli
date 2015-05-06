@@ -5,7 +5,7 @@ CLI tool for interacting with environments hosted on [Catalyze](https://catalyze
 
 ## Installing
 
-Either of these methods requires python 2.7, [pip](https://pip.pypa.io/en/latest/installing.html), and setuptools (`pip install setuptools`).
+Either of these methods requires python 2.7, [pip](https://pip.pypa.io/en/latest/installing.html), and setuptools (`pip install setuptools`). Also note: for now, `console` is not supported on Windows.
 
 To verify installation: `catalyze --version`
 

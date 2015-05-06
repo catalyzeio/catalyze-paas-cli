@@ -30,7 +30,7 @@ def init_cli():
     cli = inner_cli
 
     from catalyze.commands import \
-        associate, backup, dashboard, db, environments, rake, redeploy, status, users, variables, worker
+        associate, backup, console, dashboard, db, environments, rake, redeploy, status, users, variables, worker
 
 def run():
     import catalyze.__main__
