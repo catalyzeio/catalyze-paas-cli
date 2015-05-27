@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 
 from catalyze import config, output
-import urllib, json
+from catalyze.client import ClientError, is_ok
+import urllib, json, time
 
 def list(session, env_id):
     route = "%s/v1/environments/%s?source=pod" % (config.paas_host, env_id)
@@ -59,13 +60,18 @@ def initiate_worker(session, env_id, svc_id, target):
         "target": target
     }, verify = True)
 
-
 def request_console(session, env_id, svc_id, command = None):
     route = "%s/v1/environments/%s/services/%s/console" % (config.paas_host, env_id, svc_id)
     body = {}
     if command is not None:
         body["command"] = command
-    return session.post(route, body, verify = True)
+    resp = session.post(route, body, verify = False)
+    if resp.status_code == 404:
+        output.error("This hosting environment does not yet support secure console.")
+    elif not is_ok(resp):
+        raise ClientError(resp)
+    else:
+        return resp.json()
 
 def console_job_status(session, env_id, svc_id, task_id):
     route = "%s/v1/environments/%s/services/%s/console/status/%s" % (config.paas_host, env_id, svc_id, task_id)
