@@ -14,7 +14,7 @@ def status():
     codes = []
     noncodes = []
     for service in services.list(session, settings["environmentId"]):
-        if service["type"] is not None:
+        if service["type"] != "utility":
             if service["type"] == "code":
                 codes.append("\t%s (size = %s, build status = %s, deploy status = %s)" % (service["label"], service["size"], service["build_status"], service["deploy_status"]))
             else:
