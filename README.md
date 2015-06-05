@@ -9,9 +9,11 @@ Either of these methods requires python 2.7, [pip](https://pip.pypa.io/en/latest
 
 To verify installation: `catalyze --version`
 
-### libffi
+### Missing Libraries
 
-You may get an error about a missing `libffi.h` - if this is the case, use your OS's package manager to install libffi (for OS X, using [homebrew](http://brew.sh/) - `brew install libffi`).
+You may get an error about a missing `libffi.h` - if this is the case, use your OS's package manager to install libffi (for OS X, using [homebrew](http://brew.sh/) - `brew install libffi`) (for Ubuntu - `apt-get install libffi-dev`).
+
+Likewise, you may get an error about missing libssl - this is fixed by `brew install openssl` on OS X, or `apt-get install libssl-dev` on Ubuntu.
 
 ### From PyPI
 
