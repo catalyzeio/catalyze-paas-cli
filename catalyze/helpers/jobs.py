@@ -23,7 +23,7 @@ def poll_brrgc_task(session, env_id, svc_id, task_id):
 def poll_until_complete(session, env_id, svc_id, job_id):
     while True:
         job = retrieve(session, env_id, svc_id, job_id)
-        if job["status"] not in ["scheduled", "started", "running"]:
+        if job["status"] not in ["scheduled", "queued", "started", "running"]:
             if job["status"] == "finished":
                 return job
             else:

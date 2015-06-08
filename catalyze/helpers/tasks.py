@@ -8,7 +8,7 @@ def poll_status(session, env_id, task_id):
     while True:
         time.sleep(2)
         task = session.get(route, verify = True)
-        if task["status"] not in ["scheduled", "started", "running"]:
+        if task["status"] not in ["scheduled", "queued", "started", "running"]:
             if task["status"] == "finished":
                 return task["status"]
             else:
