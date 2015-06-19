@@ -1,13 +1,13 @@
 from __future__ import absolute_import
 
 import click
-from catalyze import cli, client, project
-from catalyze.helpers import jobs, services, tasks
-import os, time, sys
+from catalyze import cli, client, project, output
+from catalyze.helpers import jobs, environments, services, tasks, pods
+import os, os.path, time, sys
 import requests
 from Crypto import Random
 from Crypto.Cipher import AES
-import tempfile, shutil, base64, binascii
+import tempfile, shutil, base64, binascii, struct
 
 @cli.group("db", short_help = "Interact with database services")
 def db():
@@ -32,22 +32,31 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
 """
     settings = project.read_settings()
     session = client.acquire_session(settings)
-    print("Looking up service...")
+    output.write("Looking up service...")
     service_id = services.get_by_label(session, settings["environmentId"], database_label)
 
-    print("Importing '%s' to %s (%s)" % (filepath, database_label, service_id))
+    environment = environments.retrieve(session, settings["environmentId"])
+    pod = pods.metadata(session, environment["podId"])
+    padding_required = pod["importRequiresLength"]
+
+    output.write("Importing '%s' to %s (%s)" % (filepath, database_label, service_id))
     basename = os.path.basename(filepath)
     dir = tempfile.mkdtemp()
     key = Random.new().read(32)
     iv = Random.new().read(AES.block_size)
-    print("Encrypting...")
+    output.write("Encrypting...")
     try:
         enc_filepath = os.path.join(dir, basename)
         with open(filepath, 'rb') as file:
             with open(enc_filepath, 'wb') as tf:
-                cipher = AES.new(key, mode = AES.MODE_CBC, IV = iv)
+                if padding_required:
+                    filesize = os.path.getsize(filepath)
+                    output.write("File size = %d" % (filesize,))
+                    tf.write(struct.pack("<Q", filesize))
+                
                 contents = file.read()
                 contents += b'\0' * (AES.block_size - len(contents) % AES.block_size)
+                cipher = AES.new(key, mode = AES.MODE_CBC, IV = iv)
                 tf.write(cipher.encrypt(contents))
 
         with open(enc_filepath, 'rb') as file:
@@ -61,7 +70,7 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
             if mysql_database is not None:
                 options["mysqlDatabase"] = mysql_database
 
-            print("Uploading...")
+            output.write("Uploading...")
             resp = services.initiate_import(session, settings["environmentId"], \
                     service_id, file, \
                     base64.b64encode(binascii.hexlify(key)), \
@@ -69,8 +78,8 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
                     wipe_first, options)
 
             task_id = resp["id"]
-            print("Processing import... (id = %s)" % (task_id,))
+            output.write("Processing import... (id = %s)" % (task_id,))
             status = tasks.poll_status(session, settings["environmentId"], task_id)
-            print("\nImport complete (end status = '%s')" % (status,))
+            output.write("\nImport complete (end status = '%s')" % (status,))
     finally:
         shutil.rmtree(dir)
