@@ -15,7 +15,7 @@ def list():
     settings = project.read_settings()
     session = client.acquire_session(settings)
     service = session.get("%s/v1/environments/%s/services/%s" % (config.paas_host, settings["environmentId"], settings["serviceId"]), verify = True)
-    variables = service["data"]["environmentVariables"]
+    variables = service["environmentVariables"]
     for value, key in sorted(variables.items()):
         output.write("%s = %s" % (value, key))
 
