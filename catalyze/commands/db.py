@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import click
 from catalyze import cli, client, project, output
-from catalyze.helpers import jobs, environments, services, tasks, pods
+from catalyze.helpers import jobs, AESCrypto, environments, services, tasks, pods
 import os, os.path, time, sys
 import requests
 from Crypto import Random
@@ -118,16 +118,7 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
     output.write("Decrypting...")
     key = binascii.unhexlify(base64.b64decode(task["backup"]["key"]))
     iv = binascii.unhexlify(base64.b64decode(task["backup"]["iv"]))
-    with open(tmp_filepath, 'rb') as enc_file:
-        origsize = struct.unpack('<Q', enc_file.read(struct.calcsize('Q')))[0]
-        with open(filepath, 'wb') as plain_file:
-            cipher = AES.new(key, mode=AES.MODE_CBC, IV=iv)
-            chunk_size = 24*1024
-            while True:
-                chunk = enc_file.read(chunk_size)
-                if len(chunk) == 0:
-                    break
-                plain_file.write(cipher.decrypt(chunk))
-            plain_file.truncate(origsize)
+    decryption = AESCrypto.Decryption(tmp_filepath, key, iv)
+    decryption.decrypt(filepath)
     os.remove(tmp_filepath)
     output.write("%s exported successfully to %s" % (database_label, filepath))
