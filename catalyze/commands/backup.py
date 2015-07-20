@@ -76,6 +76,8 @@ def download(service_label, backup_id, filepath):
     service_id = services.get_by_label(session, settings["environmentId"], service_label)
 
     job = jobs.retrieve(session, settings["environmentId"], service_id, backup_id)
+    if job["type"] != "backup" or job["status"] != "finished":
+        output.error("Only 'finished' 'backup' jobs may be downloaded with this command")
 
     output.write("Downloading backup %s" % (backup_id,))
     url = services.get_temporary_url(session, settings["environmentId"], service_id, backup_id)
