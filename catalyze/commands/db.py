@@ -79,7 +79,55 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
 
             task_id = resp["id"]
             output.write("Processing import... (id = %s)" % (task_id,))
-            status = tasks.poll_status(session, settings["environmentId"], task_id)
-            output.write("\nImport complete (end status = '%s')" % (status,))
+            task = tasks.poll_status(session, settings["environmentId"], task_id)
+            output.write("\nImport complete (end status = '%s')" % (task["status"],))
     finally:
         shutil.rmtree(dir)
+
+@db.command("export", short_help = "Exports data from a database")
+@click.argument("database_label")
+@click.argument("filepath", type=click.Path(exists=False))
+def cmd_export(database_label, filepath):
+    """Exports all data from a chosen database service.
+
+The export command is accomplished by first creating a backup of the database. Then requesting a temporary access URL to the encrypted backup file. The file is downloaded, decrypted, and stored at the provided location.
+
+If there is an unexpected error, please contact Catalyze support (support@catalyze.io).
+"""
+    settings = project.read_settings()
+    session = client.acquire_session(settings)
+    service_id = services.get_by_label(session, settings["environmentId"], database_label)
+    task_id = services.create_backup(session, settings["environmentId"], service_id)
+    print("Export started (task ID = %s)" % (task_id,))
+    output.write("Polling until export finishes.")
+    task = tasks.poll_status(session, settings["environmentId"], task_id)
+    output.write("\nEnded in status '%s'" % (task["status"],))
+    if task["status"] != "finished":
+        output.write("Export finished with illegal status, aborting.")
+        return
+    backup_id = task["id"]
+    output.write("Downloading...")
+    url = services.get_temporary_url(session, settings["environmentId"], service_id, backup_id)
+    r = requests.get(url, stream=True)
+    tmp_filepath = tempfile.mkstemp()
+    with open(tmp_filepath, 'wb+') as f:
+        for chunk in r.iter_content(chunk_size=1024):
+            if chunk:
+                f.write(chunk)
+                f.flush()
+    output.write("Decrypting...")
+    key = binascii.unhexlify(base64.b64decode(task["backup"]["key"]))
+    iv = binascii.unhexlify(base64.b64decode(task["backup"]["iv"]))
+    with open(tmp_filepath, 'rb') as enc_file:
+        origsize = struct.unpack('<Q', enc_file.read(struct.calcsize('Q')))[0]
+        with open(filepath, 'wb') as plain_file:
+            cipher = AES.new(key, mode=AES.MODE_CBC, IV=iv)
+            chunk_size = 24*1024
+            while True:
+                chunk = enc_file.read(chunk_size)
+                if len(chunk) == 0:
+                    break
+                plain_file.write(cipher.decrypt(chunk))
+            plain_file.truncate(origsize)
+    os.remove(tmp_filepath)
+    output.write("%s exported successfully to %s" % (database_label, filepath))
