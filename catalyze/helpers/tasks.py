@@ -10,7 +10,7 @@ def poll_status(session, env_id, task_id):
         task = session.get(route, verify = True)
         if task["status"] not in ["scheduled", "queued", "started", "running"]:
             if task["status"] == "finished":
-                return task["status"]
+                return task
             else:
                 output.write("")
                 output.error("Error - ended in status '%s'." % (task["status"],))

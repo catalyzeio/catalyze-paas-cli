@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import click
 from catalyze import cli, client, project, output
-from catalyze.helpers import jobs, environments, services, tasks, pods
+from catalyze.helpers import jobs, AESCrypto, environments, services, tasks, pods
 import os, os.path, time, sys
 import requests
 from Crypto import Random
@@ -79,7 +79,46 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
 
             task_id = resp["id"]
             output.write("Processing import... (id = %s)" % (task_id,))
-            status = tasks.poll_status(session, settings["environmentId"], task_id)
-            output.write("\nImport complete (end status = '%s')" % (status,))
+            task = tasks.poll_status(session, settings["environmentId"], task_id)
+            output.write("\nImport complete (end status = '%s')" % (task["status"],))
     finally:
         shutil.rmtree(dir)
+
+@db.command("export", short_help = "Exports data from a database")
+@click.argument("database_label")
+@click.argument("filepath", type=click.Path(exists=False))
+def cmd_export(database_label, filepath):
+    """Exports all data from a chosen database service.
+
+The export command is accomplished by first creating a backup of the database. Then requesting a temporary access URL to the encrypted backup file. The file is downloaded, decrypted, and stored at the provided location.
+
+If there is an unexpected error, please contact Catalyze support (support@catalyze.io).
+"""
+    settings = project.read_settings()
+    session = client.acquire_session(settings)
+    service_id = services.get_by_label(session, settings["environmentId"], database_label)
+    task_id = services.create_backup(session, settings["environmentId"], service_id)
+    print("Export started (task ID = %s)" % (task_id,))
+    output.write("Polling until export finishes.")
+    task = tasks.poll_status(session, settings["environmentId"], task_id)
+    output.write("\nEnded in status '%s'" % (task["status"],))
+    if task["status"] != "finished":
+        output.write("Export finished with illegal status \"%s\", aborting." % (task["status"],))
+        return
+    backup_id = task["id"]
+    output.write("Downloading...")
+    url = services.get_temporary_url(session, settings["environmentId"], service_id, backup_id)
+    r = requests.get(url, stream=True)
+    tmp_filepath = tempfile.mkstemp()
+    with open(tmp_filepath, 'wb+') as f:
+        for chunk in r.iter_content(chunk_size=1024):
+            if chunk:
+                f.write(chunk)
+                f.flush()
+    output.write("Decrypting...")
+    key = binascii.unhexlify(base64.b64decode(task["backup"]["key"]))
+    iv = binascii.unhexlify(base64.b64decode(task["backup"]["iv"]))
+    decryption = AESCrypto.Decryption(tmp_filepath, key, iv)
+    decryption.decrypt(filepath)
+    os.remove(tmp_filepath)
+    output.write("%s exported successfully to %s" % (database_label, filepath))

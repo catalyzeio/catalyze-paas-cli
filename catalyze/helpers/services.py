@@ -44,6 +44,10 @@ def restore_backup(session, env_id, svc_id, backup_id):
     }
     return session.post(route, body, verify = True)["taskId"]
 
+def get_temporary_url(session, env_id, svc_id, backup_id):
+    route = "%s/v1/environments/%s/services/%s/backup/%s/url" % (config.paas_host, env_id, svc_id, backup_id)
+    return session.get(route, verify = True)["url"]
+
 def initiate_import(session, env_id, svc_id, file, key, iv, wipe_first, options):
     parameters = {
         "key": key,

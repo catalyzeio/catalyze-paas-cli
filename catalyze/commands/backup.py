@@ -1,8 +1,10 @@
 from __future__ import absolute_import
 
-import click, json, time
+import click, json, requests
+import tempfile, os, base64, binascii
+
 from catalyze import cli, client, project, output
-from catalyze.helpers import services, jobs, tasks
+from catalyze.helpers import services, jobs, AESCrypto, tasks
 from datetime import datetime
 
 def parse_date(date):
@@ -46,8 +48,8 @@ def create(service_label, skip_poll):
     print("Backup started (task ID = %s)" % (task_id,))
     if not skip_poll:
         output.write("Polling until backup finishes.")
-        status = tasks.poll_status(session, settings["environmentId"], task_id)
-        output.write("\nEnded in status '%s'" % (status,))
+        task = tasks.poll_status(session, settings["environmentId"], task_id)
+        output.write("\nEnded in status '%s'" % (task["status"],))
 
 @backup.command(short_help = "Restore from a backup")
 @click.argument("service_label")#, help = "The name of the service.")
@@ -61,5 +63,35 @@ def restore(service_label, backup_id, skip_poll):
     output.write("Restoring (task = %s)" % (task_id,))
     if not skip_poll:
         output.write("Polling until restore is complete.")
-        status = tasks.poll_status(session, settings["environmentId"], task_id)
-        output.write("\nEnded in status '%s'" % (status,))
+        task = tasks.poll_status(session, settings["environmentId"], task_id)
+        output.write("\nEnded in status '%s'" % (task["status"],))
+
+@backup.command(short_help = "Download a backup")
+@click.argument("service_label")#, help = "The name of the service.")
+@click.argument("backup_id")
+@click.argument("filepath", type=click.Path(exists=False))
+def download(service_label, backup_id, filepath):
+    settings = project.read_settings()
+    session = client.acquire_session(settings)
+    service_id = services.get_by_label(session, settings["environmentId"], service_label)
+
+    job = jobs.retrieve(session, settings["environmentId"], service_id, backup_id)
+    if job["type"] != "backup" or job["status"] != "finished":
+        output.error("Only 'finished' 'backup' jobs may be downloaded with this command")
+
+    output.write("Downloading backup %s" % (backup_id,))
+    url = services.get_temporary_url(session, settings["environmentId"], service_id, backup_id)
+    r = requests.get(url, stream=True)
+    tmp_filepath = tempfile.mkstemp()
+    with open(tmp_filepath, 'wb+') as f:
+        for chunk in r.iter_content(chunk_size=1024):
+            if chunk:
+                f.write(chunk)
+                f.flush()
+    output.write("Decrypting...")
+    key = binascii.unhexlify(base64.b64decode(job["backup"]["key"]))
+    iv = binascii.unhexlify(base64.b64decode(job["backup"]["iv"]))
+    decryption = AESCrypto.Decryption(tmp_filepath, key, iv)
+    decryption.decrypt(filepath)
+    os.remove(tmp_filepath)
+    output.write("%s downloaded successfully to %s" % (service_label, filepath))
