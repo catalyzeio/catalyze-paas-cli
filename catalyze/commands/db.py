@@ -103,7 +103,7 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
     task = tasks.poll_status(session, settings["environmentId"], task_id)
     output.write("\nEnded in status '%s'" % (task["status"],))
     if task["status"] != "finished":
-        output.write("Export finished with illegal status, aborting.")
+        output.write("Export finished with illegal status \"%s\", aborting." % (task["status"],))
         return
     backup_id = task["id"]
     output.write("Downloading...")
