@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-import json, click, sys, tty, termios
+import json, click, sys, tty, termios, ssl
 from select import select
 from ws4py.client.threadedclient import WebSocketClient
 from catalyze import cli, client, project, output, config
@@ -39,7 +39,9 @@ For database services, no command is needed - instead, the appropriate command f
         token = creds["token"]
         output.write("Connecting...")
 
-        sslopt = {}
+        sslopt = {
+            "ssl_version": ssl.PROTOCOL_TLSv1
+        }
         if "skip_cert_validation" in config.behavior:
             sslopt["check_hostname"] = False
         ws = ConsoleClient(url, ssl_options = sslopt, headers = [("X-Console-Token", token)])
