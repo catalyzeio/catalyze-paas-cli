@@ -2,8 +2,8 @@ from __future__ import absolute_import
 
 import click
 from catalyze import cli, client, project, output
-from catalyze.helpers import jobs, AESCrypto, environments, services, tasks, pods
-import os, os.path, time, sys
+from catalyze.helpers import AESCrypto, environments, services, tasks, pods
+import os, os.path
 import requests
 from Crypto import Random
 from Crypto.Cipher import AES
@@ -18,8 +18,6 @@ def db():
 @click.argument("filepath", type=click.Path(exists = True))
 @click.option("--mongo-collection", default = None, help = "The name of a specific mongo collection to import into. Only applies for mongo imports.")
 @click.option("--mongo-database", default = None, help = "The name of the mongo database to import into, if not using the default. Only applies for mongo imports.")
-#@click.option("--postgres-database", default = None, help = "The name of the postgres database to import into, if not using the default. Only applies for postgres imports. This is functionally equivalent to a \"USE <schema>;\" statement.")
-#@click.option("--mysql-database", default = None, help = "The name of the mysql database to import into, if not using the default. Only applies for mysql imports. This is functionally equivalent to a \"USE <database>;\" statement."")
 @click.option("--wipe-first", is_flag = True, default = False, help = "If set, empties the database before importing. This should not be used lightly.")
 def cmd_import(database_label, filepath, mongo_collection, mongo_database, wipe_first, postgres_database = None, mysql_database = None):
     """Imports a file into a chosen database service.
@@ -101,16 +99,16 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
     print("Export started (task ID = %s)" % (task_id,))
     output.write("Polling until export finishes.")
     task = tasks.poll_status(session, settings["environmentId"], task_id)
-    output.write("\nEnded in status '%s'" % (task["status"],))
     if task["status"] != "finished":
-        output.write("Export finished with illegal status \"%s\", aborting." % (task["status"],))
+        output.write("\nExport finished with illegal status \"%s\", aborting." % (task["status"],))
         return
+    output.write("\nEnded in status '%s'" % (task["status"],))
     backup_id = task["id"]
     output.write("Downloading...")
     url = services.get_temporary_url(session, settings["environmentId"], service_id, backup_id)
     r = requests.get(url, stream=True)
-    tmp_filepath = tempfile.mkstemp()
-    with open(tmp_filepath, 'wb+') as f:
+    tmp_file, tmp_filepath = tempfile.mkstemp()
+    with tmp_file as f:
         for chunk in r.iter_content(chunk_size=1024):
             if chunk:
                 f.write(chunk)
