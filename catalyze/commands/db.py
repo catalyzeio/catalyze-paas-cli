@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import click
 from catalyze import cli, client, project, output
 from catalyze.helpers import AESCrypto, environments, services, tasks, pods, logs
-import os, os.path
+import os, os.path, sys
 import requests
 from Crypto import Random
 from Crypto.Cipher import AES
@@ -77,9 +77,11 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
 
             task_id = resp["id"]
             output.write("Processing import... (id = %s)" % (task_id,))
-            task = tasks.poll_status(session, settings["environmentId"], task_id)
+            task = tasks.poll_status(session, settings["environmentId"], task_id, exit_on_error=False)
             output.write("\nImport complete (end status = '%s')" % (task["status"],))
             logs.dump(session, settings, database_label, service_id, task["id"], "restore", None)
+            if task["status"] != "finished":
+                sys.exit(-1)
     finally:
         shutil.rmtree(dir)
 
@@ -99,10 +101,11 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
     task_id = services.create_backup(session, settings["environmentId"], service_id)
     print("Export started (task ID = %s)" % (task_id,))
     output.write("Polling until export finishes.")
-    task = tasks.poll_status(session, settings["environmentId"], task_id)
+    task = tasks.poll_status(session, settings["environmentId"], task_id, exit_on_error=False)
     if task["status"] != "finished":
         output.write("\nExport finished with illegal status \"%s\", aborting." % (task["status"],))
-        return
+        logs.dump(session, settings, database_label, service_id, task_id, "backup", None)
+        sys.exit(-1)
     output.write("\nEnded in status '%s'" % (task["status"],))
     backup_id = task["id"]
     output.write("Downloading...")

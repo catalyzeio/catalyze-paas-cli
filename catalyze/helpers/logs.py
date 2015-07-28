@@ -43,8 +43,10 @@ def dump(session, settings, service_label, service_id, task_id, task_type, file)
         shutil.copy(decrypted_tmp_filepath, file)
         output.write("Logs written to %s", (file,))
     else:
+        output.write("-------------------------- Begin %s logs --------------------------" % (service_label,))
         with open(decrypted_tmp_filepath, 'r') as f:
             for line in f:
                 output.write(line)
+        output.write("-------------------------- End %s logs --------------------------" % (service_label,))
     os.remove(tmp_filepath)
     os.remove(decrypted_tmp_filepath)
