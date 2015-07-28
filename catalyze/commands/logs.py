@@ -24,8 +24,10 @@ def logs(database_label, task_type, task_id, file):
     output.write("Retrieving %s logs for task %s ..." % (database_label, task_id))
     url = services.get_temporary_logs_url(session, settings["environmentId"], service_id, task_type, task_id)
     r = requests.get(url, stream=True)
-    tmp_file, tmp_filepath = tempfile.mkstemp()
-    with tmp_file as f:
+    basename = os.path.basename(file)
+    dir = tempfile.mkdtemp()
+    tmp_filepath = os.path.join(dir, basename)
+    with open(tmp_filepath, 'wb+') as f:
         for chunk in r.iter_content(chunk_size=1024):
             if chunk:
                 f.write(chunk)
@@ -33,8 +35,9 @@ def logs(database_label, task_type, task_id, file):
     key = binascii.unhexlify(base64.b64decode(job["backup"]["key"]))
     iv = binascii.unhexlify(base64.b64decode(job["backup"]["iv"]))
     decryption = AESCrypto.Decryption(tmp_filepath, key, iv)
-    decrypted_tmp_file, decrypted_tmp_filepath = tempfile.mkstemp()
-    decrypted_tmp_file.close()
+    decrypted_basename = os.path.basename(file)
+    decrypted_dir = tempfile.mkdtemp()
+    decrypted_tmp_filepath = os.path.join(decrypted_dir, decrypted_basename)
     decryption.decrypt(decrypted_tmp_filepath)
     if file is not None:
         shutil.copy(decrypted_tmp_filepath, file)

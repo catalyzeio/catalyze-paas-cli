@@ -107,8 +107,10 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
     output.write("Downloading...")
     url = services.get_temporary_url(session, settings["environmentId"], service_id, backup_id)
     r = requests.get(url, stream=True)
-    tmp_file, tmp_filepath = tempfile.mkstemp()
-    with tmp_file as f:
+    basename = os.path.basename(filepath)
+    dir = tempfile.mkdtemp()
+    tmp_filepath = os.path.join(dir, basename)
+    with open(tmp_filepath, 'wb+') as f:
         for chunk in r.iter_content(chunk_size=1024):
             if chunk:
                 f.write(chunk)
