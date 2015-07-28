@@ -32,9 +32,7 @@ def logs(database_label, task_type, task_id, file):
             if chunk:
                 f.write(chunk)
                 f.flush()
-    key = binascii.unhexlify(base64.b64decode(job["backup"]["key"]))
-    iv = binascii.unhexlify(base64.b64decode(job["backup"]["iv"]))
-    decryption = AESCrypto.Decryption(tmp_filepath, key, iv)
+    decryption = AESCrypto.Decryption(tmp_filepath, job["backup"]["key"], job["backup"]["iv"])
     decrypted_basename = os.path.basename(file)
     decrypted_dir = tempfile.mkdtemp()
     decrypted_tmp_filepath = os.path.join(decrypted_dir, decrypted_basename)
