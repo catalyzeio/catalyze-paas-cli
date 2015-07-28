@@ -4,7 +4,7 @@ import click, json, requests
 import tempfile, os, base64, binascii
 
 from catalyze import cli, client, project, output
-from catalyze.helpers import services, jobs, AESCrypto, tasks
+from catalyze.helpers import services, jobs, AESCrypto, tasks, logs
 from datetime import datetime
 
 def parse_date(date):
@@ -50,6 +50,7 @@ def create(service_label, skip_poll):
         output.write("Polling until backup finishes.")
         task = tasks.poll_status(session, settings["environmentId"], task_id)
         output.write("\nEnded in status '%s'" % (task["status"],))
+        logs.dump(session, settings, service_label, service_id, task_id, "backup", None)
 
 @backup.command(short_help = "Restore from a backup")
 @click.argument("service_label")#, help = "The name of the service.")
@@ -65,6 +66,7 @@ def restore(service_label, backup_id, skip_poll):
         output.write("Polling until restore is complete.")
         task = tasks.poll_status(session, settings["environmentId"], task_id)
         output.write("\nEnded in status '%s'" % (task["status"],))
+        logs.dump(session, settings, service_label, service_id, task_id, "restore", None)
 
 @backup.command(short_help = "Download a backup")
 @click.argument("service_label")#, help = "The name of the service.")

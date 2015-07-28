@@ -1,27 +1,29 @@
 from __future__ import absolute_import
 
-import click
-from catalyze import cli, client, project, output
+from catalyze import output
 from catalyze.helpers import AESCrypto, services, jobs
 import os, os.path
 import requests
-import tempfile, base64, binascii, shutil
+import tempfile, shutil
 
-@cli.command("logs", short_help = "Download log files")
-@click.argument("database_label")
-@click.argument("task_type", help = "Either 'backup' or 'restore' depending on if you're downloading backup/export logs or restore/import logs")
-@click.argument("task_id", help = "The ID of the backup, restore, import, or export job")
-@click.option("--file", type=click.Path(exists = False), help = "Optionally specifies a file to dump the logs to. Otherwise they will be printed to the console.")
-def logs(database_label, task_type, task_id, file):
-    """Download and view logs for backup and restore tasks as well as import and export"""
-    settings = project.read_settings()
-    session = client.acquire_session(settings)
-    output.write("Looking up service...")
-    service_id = services.get_by_label(session, settings["environmentId"], database_label)
 
+def dump(session, settings, service_label, service_id, task_id, task_type, file):
+    """
+    Downloads and decrypts the logs for a given job. This job is typically a backup, restore, import, or
+    export job. These logs are written to the path :param file: or output to the console if file is None.
+    This should be called after every backup, restore, import, or export job.
+
+    :param session: the project settings
+    :param settings: the current session
+    :param service_label: the human readable name of the service
+    :param service_id: the unique identifier of the service
+    :param task_id: the ID of the task for which the logs are being retrieved
+    :param task_type: the type of task for which the logs are being retrieved (`backup` or `restore`)
+    :param file: the name of the file to dump the logs to or None for console output
+    :return:
+    """
+    output.write("Retrieving %s logs for task %s ..." % (service_label, task_id))
     job = jobs.retrieve(session, settings["environmentId"], service_id, task_id)
-
-    output.write("Retrieving %s logs for task %s ..." % (database_label, task_id))
     url = services.get_temporary_logs_url(session, settings["environmentId"], service_id, task_type, task_id)
     r = requests.get(url, stream=True)
     basename = os.path.basename(file)

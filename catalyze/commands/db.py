@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import click
 from catalyze import cli, client, project, output
-from catalyze.helpers import AESCrypto, environments, services, tasks, pods
+from catalyze.helpers import AESCrypto, environments, services, tasks, pods, logs
 import os, os.path
 import requests
 from Crypto import Random
@@ -79,6 +79,7 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
             output.write("Processing import... (id = %s)" % (task_id,))
             task = tasks.poll_status(session, settings["environmentId"], task_id)
             output.write("\nImport complete (end status = '%s')" % (task["status"],))
+            logs.dump(session, settings, database_label, service_id, task["id"], "restore", None)
     finally:
         shutil.rmtree(dir)
 
@@ -120,3 +121,4 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
     decryption.decrypt(filepath)
     os.remove(tmp_filepath)
     output.write("%s exported successfully to %s" % (database_label, filepath))
+    logs.dump(session, settings, database_label, service_id, backup_id, "backup", None)
