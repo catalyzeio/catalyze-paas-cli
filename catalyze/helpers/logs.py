@@ -17,13 +17,14 @@ def dump(session, settings, service_label, service_id, task_id, task_type, file)
     :param settings: the current session
     :param service_label: the human readable name of the service
     :param service_id: the unique identifier of the service
-    :param task_id: the ID of the task for which the logs are being retrieved
+    :param task_id: the ID of the task for which the logs are being retrieved, this **should not** be a job ID
     :param task_type: the type of task for which the logs are being retrieved (`backup` or `restore`)
     :param file: the name of the file to dump the logs to or None for console output
     :return:
     """
     output.write("Retrieving %s logs for task %s ..." % (service_label, task_id))
-    job = jobs.retrieve(session, settings["environmentId"], service_id, task_id)
+    # translate the task_id into a job
+    job = jobs.retrieve_from_task_id(session, settings["environmentId"], task_id)
     url = services.get_temporary_logs_url(session, settings["environmentId"], service_id, task_type, task_id)
     r = requests.get(url, stream=True)
     basename = os.path.basename(file)

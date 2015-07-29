@@ -77,10 +77,10 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
 
             task_id = resp["id"]
             output.write("Processing import... (id = %s)" % (task_id,))
-            task = tasks.poll_status(session, settings["environmentId"], task_id, exit_on_error=False)
-            output.write("\nImport complete (end status = '%s')" % (task["status"],))
-            logs.dump(session, settings, database_label, service_id, task["id"], "restore", None)
-            if task["status"] != "finished":
+            job = tasks.poll_status(session, settings["environmentId"], task_id, exit_on_error=False)
+            output.write("\nImport complete (end status = '%s')" % (job["status"],))
+            logs.dump(session, settings, database_label, service_id, task_id, "restore", None)
+            if job["status"] != "finished":
                 sys.exit(-1)
     finally:
         shutil.rmtree(dir)
@@ -101,13 +101,13 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
     task_id = services.create_backup(session, settings["environmentId"], service_id)
     print("Export started (task ID = %s)" % (task_id,))
     output.write("Polling until export finishes.")
-    task = tasks.poll_status(session, settings["environmentId"], task_id, exit_on_error=False)
-    if task["status"] != "finished":
-        output.write("\nExport finished with illegal status \"%s\", aborting." % (task["status"],))
+    job = tasks.poll_status(session, settings["environmentId"], task_id, exit_on_error=False)
+    if job["status"] != "finished":
+        output.write("\nExport finished with illegal status \"%s\", aborting." % (job["status"],))
         logs.dump(session, settings, database_label, service_id, task_id, "backup", None)
         sys.exit(-1)
-    output.write("\nEnded in status '%s'" % (task["status"],))
-    backup_id = task["id"]
+    output.write("\nEnded in status '%s'" % (job["status"],))
+    backup_id = job["id"]
     output.write("Downloading...")
     url = services.get_temporary_url(session, settings["environmentId"], service_id, backup_id)
     r = requests.get(url, stream=True)
@@ -120,8 +120,8 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
                 f.write(chunk)
                 f.flush()
     output.write("Decrypting...")
-    decryption = AESCrypto.Decryption(tmp_filepath, task["backup"]["key"], task["backup"]["iv"])
+    decryption = AESCrypto.Decryption(tmp_filepath, job["backup"]["key"], job["backup"]["iv"])
     decryption.decrypt(filepath)
     os.remove(tmp_filepath)
     output.write("%s exported successfully to %s" % (database_label, filepath))
-    logs.dump(session, settings, database_label, service_id, backup_id, "backup", None)
+    logs.dump(session, settings, database_label, service_id, task_id, "backup", None)
