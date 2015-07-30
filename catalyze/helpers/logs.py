@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from catalyze import output
 from catalyze.helpers import AESCrypto, services, jobs
-import os, os.path
+import os, os.path, uuid
 import requests
 import tempfile, shutil
 
@@ -25,9 +25,10 @@ def dump(session, settings, service_label, service_id, task_id, task_type, file)
     output.write("Retrieving %s logs for task %s ..." % (service_label, task_id))
     # translate the task_id into a job
     job = jobs.retrieve_from_task_id(session, settings["environmentId"], task_id)
-    url = services.get_temporary_logs_url(session, settings["environmentId"], service_id, task_type, task_id)
+    url = services.get_temporary_logs_url(session, settings["environmentId"], service_id, task_type, job["id"])
+    print('url %s' % url)
     r = requests.get(url, stream=True)
-    basename = os.path.basename(file)
+    basename = os.path.basename(str(uuid.uuid4()))
     dir = tempfile.mkdtemp()
     tmp_filepath = os.path.join(dir, basename)
     with open(tmp_filepath, 'wb+') as f:
@@ -36,9 +37,7 @@ def dump(session, settings, service_label, service_id, task_id, task_type, file)
                 f.write(chunk)
                 f.flush()
     decryption = AESCrypto.Decryption(tmp_filepath, job["backup"]["key"], job["backup"]["iv"])
-    decrypted_basename = os.path.basename(file)
-    decrypted_dir = tempfile.mkdtemp()
-    decrypted_tmp_filepath = os.path.join(decrypted_dir, decrypted_basename)
+    decrypted_tmp_filepath = os.path.join(dir, str(uuid.uuid4()))
     decryption.decrypt(decrypted_tmp_filepath)
     if file is not None:
         shutil.copy(decrypted_tmp_filepath, file)
@@ -48,6 +47,7 @@ def dump(session, settings, service_label, service_id, task_id, task_type, file)
         with open(decrypted_tmp_filepath, 'r') as f:
             for line in f:
                 output.write(line)
-        output.write("-------------------------- End %s logs --------------------------" % (service_label,))
+        output.write("--------------------------  End %s logs  --------------------------" % (service_label,))
     os.remove(tmp_filepath)
     os.remove(decrypted_tmp_filepath)
+    os.removedirs(dir)

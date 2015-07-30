@@ -48,19 +48,27 @@ def get_temporary_url(session, env_id, svc_id, backup_id):
     route = "%s/v1/environments/%s/services/%s/backup/%s/url" % (config.paas_host, env_id, svc_id, backup_id)
     return session.get(route, verify = True)["url"]
 
+def get_temporary_upload_url(session, env_id, svc_id):
+    route = "%s/v1/environments/%s/services/%s/restore/url" % (config.paas_host, env_id, svc_id)
+    return session.get(route, verify = True)["url"]
+
 def get_temporary_logs_url(session, env_id, svc_id, task_type, task_id):
     route = "%s/v1/environments/%s/services/%s/%s/%s/logs/url" % (config.paas_host, env_id, svc_id, task_type, task_id)
     return session.get(route, verify = True)["url"]
 
-def initiate_import(session, env_id, svc_id, file, key, iv, wipe_first, options):
+def initiate_import(session, env_id, svc_id, url, file, key, iv, wipe_first, options):
+    r = session.post_file(url, {"file": file}, verify = True)
+    if r.status_code < 200 or r.status_code >= 300:
+        output.write("Failed to upload the encrypted import file")
     parameters = {
+        "location": url,
         "key": key,
         "iv": iv,
         "wipeBeforeImport": wipe_first,
         "options": options
     }
     route = "%s/v1/environments/%s/services/%s/db/import" % (config.paas_host, env_id, svc_id)
-    return session.post_file(route, {"file": file, "parameters": ("parameters.json", json.dumps(parameters), "application/json")}, verify = True)
+    return session.post(route, parameters, verify = True)
 
 def initiate_worker(session, env_id, svc_id, target):
     route = "%s/v1/environments/%s/services/%s/background" % (config.paas_host, env_id, svc_id)

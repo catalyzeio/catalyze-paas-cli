@@ -69,10 +69,11 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
                 options["mysqlDatabase"] = mysql_database
 
             output.write("Uploading...")
-            resp = services.initiate_import(session, settings["environmentId"], \
-                    service_id, file, \
-                    base64.b64encode(binascii.hexlify(key)), \
-                    base64.b64encode(binascii.hexlify(iv)), \
+            upload_url = services.get_temporary_upload_url(session, settings["environmentId"], service_id)
+            resp = services.initiate_import(session, settings["environmentId"],
+                    service_id, upload_url, file,
+                    base64.b64encode(binascii.hexlify(key)),
+                    base64.b64encode(binascii.hexlify(iv)),
                     wipe_first, options)
 
             task_id = resp["id"]
