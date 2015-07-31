@@ -97,8 +97,8 @@ class Session:
         else:
             return resp
 
-    def put_file(self, url, form, verify = False):
-        resp = self.session.put(url, files = form)
+    def put_file(self, url, file, verify = False):
+        resp = self.session.put(url, data = file)
         if verify:
             if is_ok(resp):
                 return None if not resp.text else resp.json()

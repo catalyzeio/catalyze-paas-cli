@@ -57,7 +57,7 @@ def get_temporary_logs_url(session, env_id, svc_id, task_type, task_id):
     return session.get(route, verify = True)["url"]
 
 def initiate_import(session, env_id, svc_id, url, file, key, iv, wipe_first, options):
-    session.put_file(url, {'file': file}, verify = True)
+    session.put_file(url, file, verify = True)
     parameters = {
         "location": url,
         "key": key,
