@@ -97,10 +97,8 @@ class Session:
         else:
             return resp
 
-    def post_file(self, url, form, verify = False):
-        headers = self._build_headers()
-        del headers["Content-Type"]
-        resp = self.session.post(url, headers = headers, files = form)
+    def put_file(self, url, form, verify = False):
+        resp = self.session.put(url, files = form)
         if verify:
             if is_ok(resp):
                 return None if not resp.text else resp.json()

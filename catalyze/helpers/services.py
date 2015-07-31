@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from catalyze import config, output
+from catalyze import config, output, client
 from catalyze.client import ClientError, is_ok
 import urllib, json, time
 
@@ -57,9 +57,7 @@ def get_temporary_logs_url(session, env_id, svc_id, task_type, task_id):
     return session.get(route, verify = True)["url"]
 
 def initiate_import(session, env_id, svc_id, url, file, key, iv, wipe_first, options):
-    r = session.post_file(url, {"file": file}, verify = True)
-    if r.status_code < 200 or r.status_code >= 300:
-        output.write("Failed to upload the encrypted import file")
+    session.put_file(url, {'file': file}, verify = True)
     parameters = {
         "location": url,
         "key": key,

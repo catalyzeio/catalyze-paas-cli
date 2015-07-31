@@ -26,7 +26,6 @@ def dump(session, settings, service_label, service_id, task_id, task_type, file)
     # translate the task_id into a job
     job = jobs.retrieve_from_task_id(session, settings["environmentId"], task_id)
     url = services.get_temporary_logs_url(session, settings["environmentId"], service_id, task_type, job["id"])
-    print('url %s' % url)
     r = requests.get(url, stream=True)
     basename = os.path.basename(str(uuid.uuid4()))
     dir = tempfile.mkdtemp()
@@ -36,7 +35,7 @@ def dump(session, settings, service_label, service_id, task_id, task_type, file)
             if chunk:
                 f.write(chunk)
                 f.flush()
-    decryption = AESCrypto.Decryption(tmp_filepath, job["backup"]["key"], job["backup"]["iv"])
+    decryption = AESCrypto.Decryption(tmp_filepath, job[task_type]["key"], job[task_type]["iv"])
     decrypted_tmp_filepath = os.path.join(dir, str(uuid.uuid4()))
     decryption.decrypt(decrypted_tmp_filepath)
     if file is not None:
