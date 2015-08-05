@@ -5,3 +5,6 @@ dist
 *.py[co]
 venv
 cacert.pem
+.idea
+client.spec
+setup.spec

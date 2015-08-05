@@ -22,3 +22,7 @@ def poll_until_complete(session, env_id, svc_id, job_id):
             break
         sys.stdout.write(".")
         time.sleep(2)
+
+def retrieve_from_task_id(session, env_id, task_id):
+    route = "%s/v1/environments/%s/tasks/%s" % (config.paas_host, env_id, task_id)
+    return session.get(route, verify = True)

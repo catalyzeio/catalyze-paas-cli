@@ -2,8 +2,8 @@ from __future__ import absolute_import
 
 import click
 from catalyze import cli, client, project, output
-from catalyze.helpers import jobs, AESCrypto, environments, services, tasks, pods
-import os, os.path, time, sys
+from catalyze.helpers import AESCrypto, environments, services, tasks, pods, logs
+import os, os.path, sys
 import requests
 from Crypto import Random
 from Crypto.Cipher import AES
@@ -18,8 +18,6 @@ def db():
 @click.argument("filepath", type=click.Path(exists = True))
 @click.option("--mongo-collection", default = None, help = "The name of a specific mongo collection to import into. Only applies for mongo imports.")
 @click.option("--mongo-database", default = None, help = "The name of the mongo database to import into, if not using the default. Only applies for mongo imports.")
-#@click.option("--postgres-database", default = None, help = "The name of the postgres database to import into, if not using the default. Only applies for postgres imports. This is functionally equivalent to a \"USE <schema>;\" statement.")
-#@click.option("--mysql-database", default = None, help = "The name of the mysql database to import into, if not using the default. Only applies for mysql imports. This is functionally equivalent to a \"USE <database>;\" statement."")
 @click.option("--wipe-first", is_flag = True, default = False, help = "If set, empties the database before importing. This should not be used lightly.")
 def cmd_import(database_label, filepath, mongo_collection, mongo_database, wipe_first, postgres_database = None, mysql_database = None):
     """Imports a file into a chosen database service.
@@ -71,16 +69,20 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
                 options["mysqlDatabase"] = mysql_database
 
             output.write("Uploading...")
-            resp = services.initiate_import(session, settings["environmentId"], \
-                    service_id, file, \
-                    base64.b64encode(binascii.hexlify(key)), \
-                    base64.b64encode(binascii.hexlify(iv)), \
+            upload_url = services.get_temporary_upload_url(session, settings["environmentId"], service_id)
+            resp = services.initiate_import(session, settings["environmentId"],
+                    service_id, upload_url, file,
+                    base64.b64encode(binascii.hexlify(key)),
+                    base64.b64encode(binascii.hexlify(iv)),
                     wipe_first, options)
 
             task_id = resp["id"]
             output.write("Processing import... (id = %s)" % (task_id,))
-            task = tasks.poll_status(session, settings["environmentId"], task_id)
-            output.write("\nImport complete (end status = '%s')" % (task["status"],))
+            job = tasks.poll_status(session, settings["environmentId"], task_id, exit_on_error=False)
+            output.write("\nImport complete (end status = '%s')" % (job["status"],))
+            logs.dump(session, settings, database_label, service_id, task_id, "restore", None)
+            if job["status"] != "finished":
+                sys.exit(-1)
     finally:
         shutil.rmtree(dir)
 
@@ -100,25 +102,27 @@ If there is an unexpected error, please contact Catalyze support (support@cataly
     task_id = services.create_backup(session, settings["environmentId"], service_id)
     print("Export started (task ID = %s)" % (task_id,))
     output.write("Polling until export finishes.")
-    task = tasks.poll_status(session, settings["environmentId"], task_id)
-    output.write("\nEnded in status '%s'" % (task["status"],))
-    if task["status"] != "finished":
-        output.write("Export finished with illegal status \"%s\", aborting." % (task["status"],))
-        return
-    backup_id = task["id"]
+    job = tasks.poll_status(session, settings["environmentId"], task_id, exit_on_error=False)
+    if job["status"] != "finished":
+        output.write("\nExport finished with illegal status \"%s\", aborting." % (job["status"],))
+        logs.dump(session, settings, database_label, service_id, task_id, "backup", None)
+        sys.exit(-1)
+    output.write("\nEnded in status '%s'" % (job["status"],))
+    backup_id = job["id"]
     output.write("Downloading...")
     url = services.get_temporary_url(session, settings["environmentId"], service_id, backup_id)
     r = requests.get(url, stream=True)
-    tmp_filepath = tempfile.mkstemp()
+    basename = os.path.basename(filepath)
+    dir = tempfile.mkdtemp()
+    tmp_filepath = os.path.join(dir, basename)
     with open(tmp_filepath, 'wb+') as f:
         for chunk in r.iter_content(chunk_size=1024):
             if chunk:
                 f.write(chunk)
                 f.flush()
     output.write("Decrypting...")
-    key = binascii.unhexlify(base64.b64decode(task["backup"]["key"]))
-    iv = binascii.unhexlify(base64.b64decode(task["backup"]["iv"]))
-    decryption = AESCrypto.Decryption(tmp_filepath, key, iv)
+    decryption = AESCrypto.Decryption(tmp_filepath, job["backup"]["key"], job["backup"]["iv"])
     decryption.decrypt(filepath)
     os.remove(tmp_filepath)
     output.write("%s exported successfully to %s" % (database_label, filepath))
+    logs.dump(session, settings, database_label, service_id, task_id, "backup", None)

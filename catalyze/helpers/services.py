@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from catalyze import config, output
+from catalyze import config, output, client
 from catalyze.client import ClientError, is_ok
 import urllib, json, time
 
@@ -48,15 +48,25 @@ def get_temporary_url(session, env_id, svc_id, backup_id):
     route = "%s/v1/environments/%s/services/%s/backup/%s/url" % (config.paas_host, env_id, svc_id, backup_id)
     return session.get(route, verify = True)["url"]
 
-def initiate_import(session, env_id, svc_id, file, key, iv, wipe_first, options):
+def get_temporary_upload_url(session, env_id, svc_id):
+    route = "%s/v1/environments/%s/services/%s/restore/url" % (config.paas_host, env_id, svc_id)
+    return session.get(route, verify = True)["url"]
+
+def get_temporary_logs_url(session, env_id, svc_id, task_type, task_id):
+    route = "%s/v1/environments/%s/services/%s/%s/%s/logs/url" % (config.paas_host, env_id, svc_id, task_type, task_id)
+    return session.get(route, verify = True)["url"]
+
+def initiate_import(session, env_id, svc_id, url, file, key, iv, wipe_first, options):
+    session.put_file(url, file, verify = True)
     parameters = {
+        "location": url,
         "key": key,
         "iv": iv,
         "wipeBeforeImport": wipe_first,
         "options": options
     }
     route = "%s/v1/environments/%s/services/%s/db/import" % (config.paas_host, env_id, svc_id)
-    return session.post_file(route, {"file": file, "parameters": ("parameters.json", json.dumps(parameters), "application/json")}, verify = True)
+    return session.post(route, parameters, verify = True)
 
 def initiate_worker(session, env_id, svc_id, target):
     route = "%s/v1/environments/%s/services/%s/background" % (config.paas_host, env_id, svc_id)
