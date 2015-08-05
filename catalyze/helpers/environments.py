@@ -21,3 +21,7 @@ def add_user(session, env_id, user_id):
 def remove_user(session, env_id, user_id):
     route = "%s/v1/environments/%s/users/%s" % (config.paas_host, env_id, user_id)
     return session.delete(route, verify = True)
+
+def retrieve_metrics(session, env_id, mins = 1):
+    route = "%s/v1/environments/%s/metrics?mins=%d" % (config.paas_host, env_id, mins)
+    return session.get(route, verify = True)

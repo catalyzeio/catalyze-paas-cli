@@ -106,3 +106,7 @@ def get_console_tokens(session, env_id, svc_id, job_id):
 def destroy_console(session, env_id, svc_id, job_id):
     route = "%s/v1/environments/%s/services/%s/console/%s" % (config.paas_host, env_id, svc_id, job_id)
     return session.delete(route, verify = True)
+
+def retrieve_metrics(session, env_id, svc_id, mins = 1):
+    route = "%s/v1/environments/%s/metrics/%s?mins=%d" % (config.paas_host, env_id, svc_id, mins)
+    return session.get(route, verify = True)
