@@ -121,7 +121,7 @@ class CSVTransformer(MetricsTransformer):
                 row = [metric["ts"], \
                         job["type"], \
                         job["id"], \
-                        math.ceil(metric["cpu"]["usage"] / 1000), \
+                        math.ceil(metric["cpu"]["usage"]), \
                         math.ceil(metric["network"]["rx_bytes"]["ave"] / 1024), \
                         math.ceil(metric["network"]["tx_bytes"]["ave"] / 1024), \
                         math.ceil(metric["memory"]["ave"] / 1024.0), \
