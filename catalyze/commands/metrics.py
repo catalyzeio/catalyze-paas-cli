@@ -148,7 +148,7 @@ def deltas(l):
     add a zero to the front.  While not perfectly accurate, the leading zero
     sets the minimum to always be zero.
     """
-     if l:
+    if l:
         return [0] + [j-i for i,j in  zip(l[:-1], l[1:])]
      else:
         return []
