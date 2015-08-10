@@ -75,12 +75,13 @@ class TextTransformer(MetricsTransformer):
     def transform_single(self, data, prefix = ""):
         for job in data:
             for metric in job["metrics"]:
-                output.write("%s%s | %s (%s) | CPU: %d | Net: RX: %d KB TX: %d KB | Mem: %d KB | Disk: %d KB read / %d KB write " % ( \
+                output.write("%s%s | %8s (%s) | CPU: %6.2fs (%5.2f%%) | Net: RX: %d KB TX: %d KB | Mem: %d KB | Disk: %d KB read / %d KB write " % ( \
                     prefix, \
                     time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(metric["ts"])), \
                     job["type"], \
                     job["id"], \
-                    math.ceil(metric["cpu"]["usage"] / 1000.0), \
+                    metric["cpu"]["usage"] / 1000000000.0, \
+                    metric["cpu"]["usage"] / 1000000000.0 / 60.0 * 100.0,
                     math.ceil(metric["network"]["rx_bytes"]["ave"] / 1024.0), \
                     math.ceil(metric["network"]["tx_bytes"]["ave"] / 1024.0), \
                     math.ceil(metric["memory"]["ave"] / 1024.0),
@@ -120,7 +121,7 @@ class CSVTransformer(MetricsTransformer):
                 row = [metric["ts"], \
                         job["type"], \
                         job["id"], \
-                        math.ceil(metric["cpu"]["usage"] / 1000), \
+                        math.ceil(metric["cpu"]["usage"]), \
                         math.ceil(metric["network"]["rx_bytes"]["ave"] / 1024), \
                         math.ceil(metric["network"]["tx_bytes"]["ave"] / 1024), \
                         math.ceil(metric["memory"]["ave"] / 1024.0), \
