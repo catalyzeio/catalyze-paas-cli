@@ -150,7 +150,7 @@ def deltas(l):
     """
     if l:
         return [0] + [j-i for i,j in  zip(l[:-1], l[1:])]
-     else:
+    else:
         return []
 
 class SparkTransformer(MetricsTransformer):
@@ -164,6 +164,10 @@ class SparkTransformer(MetricsTransformer):
             sparkdata["Net TX"] = deltas([metric["network"]["tx_bytes"]["ave"] for metric in metrics_reversed])
             sparkdata["Disk Read"] = [metric["diskio"]["read"] for metric in metrics_reversed]
             sparkdata["Disk Write"] = [metric["diskio"]["write"] for metric in metrics_reversed]
+
+            if sparkdata["CPU"]:
+                output.write("{}{} ({})".format(
+                    prefix, job["id"], job["type"]))
 
             for k in sorted(sparkdata.keys()):
                 v  = sparkdata[k]
