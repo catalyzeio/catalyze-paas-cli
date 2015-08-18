@@ -75,7 +75,7 @@ class TextTransformer(MetricsTransformer):
     def transform_single(self, data, prefix = ""):
         for job in data:
             for metric in job["metrics"]:
-                output.write("%s%s | %8s (%s) | CPU: %6.2fs (%5.2f%%) | Net: RX: %d KB TX: %d KB | Mem: %d KB | Disk: %d KB read / %d KB write " % tuple([ \
+                output.write("%s%s | %8s (%s) | CPU: %6.2fs (%5.2f%%) | Net: RX: %.2f KB TX: %.2f KB | Mem: %.2f KB | Disk: %.2f KB read / %.2f KB write " % tuple([ \
                     prefix,
                     time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(metric["ts"])),
                     job["type"],
