@@ -75,18 +75,11 @@ class TextTransformer(MetricsTransformer):
     def transform_single(self, data, prefix = ""):
         for job in data:
             for metric in job["metrics"]:
-                output.write("%s%s | %8s (%s) | CPU: %6.2fs (%5.2f%%) | Net: RX: %d KB TX: %d KB | Mem: %d KB | Disk: %d KB read / %d KB write " % ( \
-                    prefix, \
-                    time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(metric["ts"])), \
-                    job["type"], \
-                    job["id"], \
-                    metric["cpu"]["usage"] / 1000000000.0, \
-                    metric["cpu"]["usage"] / 1000000000.0 / 60.0 * 100.0,
-                    math.ceil(metric["network"]["rx_bytes"]["ave"] / 1024.0), \
-                    math.ceil(metric["network"]["tx_bytes"]["ave"] / 1024.0), \
-                    math.ceil(metric["memory"]["ave"] / 1024.0),
-                    math.ceil(metric["diskio"]["read"] / 1024.0),
-                    math.ceil(metric["diskio"]["write"] / 1024.0)))
+                output.write("%s%s | %8s (%s) | CPU: %6.2fs (%5.2f%%) | Net: RX: %.2f KB TX: %.2f KB | Mem: %.2f KB | Disk: %.2f KB read / %.2f KB write " % tuple([ \
+                    prefix,
+                    time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(metric["ts"])),
+                    job["type"],
+                    job["id"]] + metric_to_list(metric)))
 
     def transform_group(self, data):
         for service in data:
@@ -109,7 +102,7 @@ class CSVTransformer(MetricsTransformer):
 
     def write_headers_maybe(self):
         if not self.headers_printed:
-            base_headers = ["timestamp", "type", "job_id", "cpu_usage", "rx_bytes", "tx_bytes", "memory", "disk_read", "disk_write"]
+            base_headers = ["timestamp", "type", "job_id", "cpu_usage", "rx_kb", "tx_kb", "memory", "disk_read", "disk_write"]
             headers = base_headers if not self.group_mode else ["service_label", "service_id"] + base_headers
             self.writer.writerow(headers)
             self.headers_printed = True
@@ -118,15 +111,9 @@ class CSVTransformer(MetricsTransformer):
         self.write_headers_maybe()
         for job in data:
             for metric in job["metrics"]:
-                row = [metric["ts"], \
-                        job["type"], \
-                        job["id"], \
-                        math.ceil(metric["cpu"]["usage"]), \
-                        math.ceil(metric["network"]["rx_bytes"]["ave"] / 1024), \
-                        math.ceil(metric["network"]["tx_bytes"]["ave"] / 1024), \
-                        math.ceil(metric["memory"]["ave"] / 1024.0), \
-                        math.ceil(metric["diskio"]["read"] / 1024.0), \
-                        math.ceil(metric["diskio"]["write"] / 1024.0)]
+                row = [metric["ts"], 
+                        job["type"],
+                        job["id"]] + metric_to_list(metric)
                 row = row if service_id is None else [service_label, service_id] + row
                 self.writer.writerow(row)
         if service_id is None:
@@ -137,3 +124,14 @@ class CSVTransformer(MetricsTransformer):
         for service in data:
             self.transform_single(service["jobs"], service["serviceId"], service["serviceName"])
         output.write(self.sio.getvalue())
+
+def metric_to_list(metric):
+    return [
+            metric["cpu"]["usage"] / 1000000000.0,
+            metric["cpu"]["usage"] / 1000000000.0 / 60.0 * 100.0,
+            math.ceil(metric["network"]["rx_bytes"]["ave"] / 1024.0 if "rx_bytes" in metric["network"] else metric["network"]["rx_kb"]),
+            math.ceil(metric["network"]["tx_bytes"]["ave"] / 1024.0 if "tx_bytes" in metric["network"] else metric["network"]["tx_kb"]),
+            math.ceil(metric["memory"]["ave"] / 1024.0),
+            math.ceil(metric["diskio"]["read"] / 1024.0),
+            math.ceil(metric["diskio"]["write"] / 1024.0)
+    ]
