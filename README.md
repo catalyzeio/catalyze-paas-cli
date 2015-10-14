@@ -1,3 +1,6 @@
+# Deprecated
+This CLI has been deprecated and replaced by the new [Catalyze CLI](https://github.com/catalyzeio/cli). We've included [documentation](https://github.com/catalyzeio/cli/blob/master/Docs.md) for the new CLI and [instructions on how to upgrade](https://github.com/catalyzeio/cli/blob/master/Docs.md#-upgrading-from-1xx) in the new repository. 
+
 # Catalyze PaaS CLI
 Build status: [![Circle CI](https://circleci.com/gh/catalyzeio/catalyze-paas-cli.svg?style=svg&circle-token=0c5e5a36e771343a7ecc71990657378dcc0d2581)](https://circleci.com/gh/catalyzeio/catalyze-paas-cli)
 
